@@ -45,6 +45,19 @@ class FLutterAR extends StatefulWidget {
 class _FLutterARState extends State<FLutterAR> {
   ArCoreViewController _controller;
   double radius = 5.0;
+  bool isActive = false;
+  bool isRecognised = false;
+
+  _switch() {
+    setState(() {
+      isActive = !isActive;
+      if (isActive) {
+        _controller.pauseImageRecognition();
+      } else {
+        _controller.resumeImageRecognition();
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -56,9 +69,31 @@ class _FLutterARState extends State<FLutterAR> {
     _controller.getArCoreView();
   }
 
+  Widget _display() {
+    return Positioned(
+      top: MediaQuery.of(context).size.width / 2,
+      left: MediaQuery.of(context).size.height / 2,
+      child: Container(
+        width: 50.0,
+        height: 50.0,
+        decoration: BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.white,
+                  offset: Offset(0.0, 25.0),
+                  blurRadius: 25.0)
+            ]),
+      ),
+    );
+  }
+
   void _onImageRecognized(String recImgName) {
     print("image recongized: $recImgName");
-    vector.Sphere()..radius = radius;
+    setState(() {
+      isRecognised = true;
+    });
     // you can pause the image recognition via arCoreViewController.pauseImageRecognition();
     // resume it via arCoreViewController.resumeImageRecognition();
   }
@@ -73,17 +108,28 @@ class _FLutterARState extends State<FLutterAR> {
         backgroundColor: Colors.deepPurple,
         title: Text('FlutterAR'),
       ),
-      body: Center(
-        child: ArCoreView(
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height,
-          onArCoreViewCreated: _onViewCreated,
-          focusBox: Container(
-            height: 400.0,
-            width: double.infinity,
-            decoration: BoxDecoration(border: Border.all(width: 2.0)),
+      body: Stack(
+        children: <Widget>[
+          Center(
+            child: ArCoreView(
+              width: double.infinity,
+              height: MediaQuery.of(context).size.height,
+              onArCoreViewCreated: _onViewCreated,
+              onImageRecognized: _onImageRecognized,
+              focusBox: Container(
+                height: 400.0,
+                width: double.infinity,
+                decoration: BoxDecoration(border: Border.all(width: 2.0)),
+              ),
+            ),
           ),
-        ),
+          isRecognised ? _display() : Container()
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _switch();
+        },
       ),
     );
   }
